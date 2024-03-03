@@ -14,6 +14,7 @@ IN_FILE=$(basename "$IN_PATH")
 
 if [ -d "${IN_PATH}" ]; then
     # Process the whole dir
+    IN_DIR="${IN_PATH}"
     IN_FILE=""
 fi
 
@@ -26,6 +27,7 @@ docker run --rm -it -v /dev:/dev \
         bash -c "\
             cd /work/FirmAE && \
             sudo service postgresql start && \
-            sleep 10 && \
-            ./run.sh -c brand \"/work/firmwares/${IN_FILE}\" \
+            ./run.sh -c brand \"/work/firmwares/${IN_FILE}\"; \
+            echo -n "RESULT:"; \
+            cat ./scratch/1/result \
             "
