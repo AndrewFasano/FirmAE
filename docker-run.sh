@@ -27,5 +27,5 @@ docker run --rm -it -v /dev:/dev \
             cd /work/FirmAE && \
             sudo service postgresql start && \
             sleep 10 && \
-            ./run.sh -c brand /work/firmwares/${IN_FILE} \
+            ./run.sh -c brand \"/work/firmwares/${IN_FILE}\" \
             "
