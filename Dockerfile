@@ -37,17 +37,35 @@ RUN python3 -m pip install selenium bs4 requests future paramiko pysnmp==4.4.6 p
 # google chrome
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
 RUN echo 'deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main' | tee /etc/apt/sources.list.d/google-chrome.list
-RUN apt-get update
-RUN apt-get install -y google-chrome-stable
-RUN apt-get install -y ntfs-3g
+RUN apt-get update && \
+    apt-get install -y \
+        google-chrome-stable \
+        ntfs-3g \
+        postgresql \
+        sudo
 RUN ln -s /bin/ntfs-3g /bin/mount.ntfs-3g
 
-COPY ./sudo /usr/bin/sudo
-RUN chmod 777 /usr/bin/sudo
+# Install static bins
+COPY download.sh /tmp/
+RUN mkdir -p /work/FirmAE && \
+    cd /work/FirmAE/ && \
+    bash /tmp/download.sh
 
-RUN mkdir -p /work/FirmAE
-RUN mkdir -p /work/firmwares
-COPY unstuff /usr/local/bin/
+# Setup database
+COPY database/schema /tmp
+
+RUN service postgresql start && sudo -u postgres psql -c "CREATE USER firmadyne WITH PASSWORD 'firmadyne';" \
+  && sudo -u postgres createdb -O firmadyne firmware \
+  && sudo -u postgres psql -d firmware < /tmp/schema \
+  && service postgresql stop
+
+COPY . /work/FirmAE
+
+RUN mkdir -p /work/firmwares && \
+    cp /work/FirmAE/unstuff /usr/local/bin
 
 ENV USER=root
 ENV FIRMAE_DOCKER=true
+
+#CMD ["bash", "-c", \
+#       "sudo service postgresql start && sudo chmod 777 /out && /bin/bash"]

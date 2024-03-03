@@ -1,2 +1,2 @@
-docker build -t fcore ./core
+docker build -t fcore .
 echo "[*] Completed initializing core docker"
