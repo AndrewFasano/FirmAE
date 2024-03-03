@@ -41,7 +41,7 @@ else
 fi
 
 echo -e "[*] Waiting web service... from ${IPS[@]}"
-read IP PING_RESULT WEB_RESULT TIME_PING TIME_WEB < <(check_network "${IPS[@]}" false)
+read IP PING_RESULT WEB_RESULT WEB_RESPONSE TIME_PING TIME_WEB < <(check_network "${IPS[@]}" false)
 
 if [ "${PING_RESULT}" = "true" ]; then
     echo true > ${WORK_DIR}/ping
@@ -51,6 +51,9 @@ fi
 if [ "${WEB_RESULT}" = "true" ]; then
     echo true > ${WORK_DIR}/web
     echo ${TIME_WEB} > ${WORK_DIR}/time_web
+fi
+if [ "${WEB_RESPONSE}" != "0" ]; then
+    echo "${WEB_RESPONSE}" > ${WORK_DIR}/web_response
 fi
 
 # Kill the qemu process, but keep the 'grep' process itself.

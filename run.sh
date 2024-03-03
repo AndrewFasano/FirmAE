@@ -48,10 +48,10 @@ function get_option()
 
 function get_brand()
 {
-  INFILE=${1}
+  INFILE="${1}"
   BRAND=${2}
   if [ ${BRAND} = "auto" ]; then
-    echo `./scripts/util.py get_brand ${INFILE} ${PSQL_IP}`
+    echo `./scripts/util.py get_brand "${INFILE}" ${PSQL_IP}`
   else
     echo ${2}
   fi
@@ -75,9 +75,9 @@ IID=-1
 function run_emulation()
 {
     echo "[*] ${1} emulation start!!!"
-    INFILE=${1}
-    BRAND=`get_brand ${INFILE} ${BRAND}`
-    FILENAME=`basename ${INFILE%.*}`
+    INFILE="${1}"
+    BRAND=`get_brand "${INFILE}" ${BRAND}`
+    FILENAME=`basename "${INFILE%.*}"`
     PING_RESULT=false
     WEB_RESULT=false
     IP=''
@@ -106,9 +106,9 @@ function run_emulation()
     # automatically from the path of the image file.
     timeout --preserve-status --signal SIGINT 300 \
         ./sources/extractor/extractor.py $brand_arg -sql $PSQL_IP -np \
-        -nk $INFILE images 2>&1 >/dev/null
+        -nk "$INFILE" images 2>&1 >/dev/null
 
-    IID=`./scripts/util.py get_iid $INFILE $PSQL_IP`
+    IID=`./scripts/util.py get_iid "$INFILE" $PSQL_IP`
     if [ ! "${IID}" ]; then
         echo -e "[\033[31m-\033[0m] extractor.py failed!"
         return
@@ -121,7 +121,7 @@ function run_emulation()
     # automatically from the path of the image file.
     timeout --preserve-status --signal SIGINT 300 \
         ./sources/extractor/extractor.py $brand_arg -sql $PSQL_IP -np \
-        -nf $INFILE images 2>&1 >/dev/null
+        -nf "$INFILE" images 2>&1 >/dev/null
 
     WORK_DIR=`get_scratch ${IID}`
     mkdir -p ${WORK_DIR}
@@ -225,6 +225,7 @@ function run_emulation()
         WEB_RESULT=true
     fi
 
+
     echo -e "\n[IID] ${IID}\n[\033[33mMODE\033[0m] ${OPTION}"
     if ($PING_RESULT); then
         echo -e "[\033[32m+\033[0m] Network reachable on ${IP}!"
@@ -232,6 +233,13 @@ function run_emulation()
     if ($WEB_RESULT); then
         echo -e "[\033[32m+\033[0m] Web service on ${IP}"
         echo true > ${WORK_DIR}/result
+        if [ -e "${WORK_DIR}/web_response" ]; then
+            echo "Web response is $(cat ${WORK_DIR}/web_response) bytes"
+            echo true > ${WORK_DIR}/result
+        else
+            echo "Web response is empty"
+            echo empty > ${WORK_DIR}/result
+        fi
     else
         echo false > ${WORK_DIR}/result
     fi
@@ -309,14 +317,14 @@ if [ ${OPTION} = "debug" ] && [ -d ${FIRMWARE} ]; then
     exit 1
 fi
 
-if [ ! -d ${FIRMWARE} ]; then
-    run_emulation ${FIRMWARE}
+if [ ! -d "${FIRMWARE}" ]; then
+    run_emulation "${FIRMWARE}"
 else
-    FIRMWARES=`find ${3} -type f`
+    FIRMWARES=`find "${3}" -type f`
 
     for FIRMWARE in ${FIRMWARES}; do
         if [ ! -d "${FIRMWARE}" ]; then
-            run_emulation ${FIRMWARE}
+            run_emulation "${FIRMWARE}"
         fi
     done
 fi
