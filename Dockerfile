@@ -54,6 +54,13 @@ RUN service postgresql start && sudo -u postgres psql -c "CREATE USER firmadyne 
   && sudo -u postgres psql -d firmware < /tmp/schema \
   && service postgresql stop
 
+RUN apt-get update && \
+    apt-get install -q -yy  \
+        libarchive13
+
+RUN wget 'https://github.com/panda-re/genext2fs/releases/download/release_9bc57e232e8bb7a0e5c8ccf503b57b3b702b973a/genext2fs.deb' && \
+    dpkg -i genext2fs.deb
+
 COPY . /work/FirmAE/
 
 RUN mkdir -p /work/firmwares && \

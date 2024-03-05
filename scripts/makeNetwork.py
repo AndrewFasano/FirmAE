@@ -59,24 +59,24 @@ QEMU_MACHINE=`get_qemu_machine ${ARCHEND}`
 QEMU_ROOTFS=`get_qemu_disk ${ARCHEND}`
 WORK_DIR=`get_scratch ${IID}`
 
-DEVICE=`add_partition "${WORK_DIR}/image.raw"`
-mount ${DEVICE} ${WORK_DIR}/image > /dev/null
-
-echo "%(NETWORK_TYPE)s" > ${WORK_DIR}/image/firmadyne/network_type
-echo "%(NET_BRIDGE)s" > ${WORK_DIR}/image/firmadyne/net_bridge
-echo "%(NET_INTERFACE)s" > ${WORK_DIR}/image/firmadyne/net_interface
-
-echo "#!/firmadyne/sh" > ${WORK_DIR}/image/firmadyne/debug.sh
-if (echo ${RUN_MODE} | grep -q "debug"); then
-    echo "while (true); do /firmadyne/busybox nc -lp 31337 -e /firmadyne/sh; done &" >> ${WORK_DIR}/image/firmadyne/debug.sh
-    echo "/firmadyne/busybox telnetd -p 31338 -l /firmadyne/sh" >> ${WORK_DIR}/image/firmadyne/debug.sh
-fi
-chmod a+x ${WORK_DIR}/image/firmadyne/debug.sh
-
-sleep 1
-sync
-umount ${WORK_DIR}/image > /dev/null
-del_partition ${DEVICE:0:$((${#DEVICE}-2))}
+#DEVICE=`add_partition "${WORK_DIR}/image.raw"`
+#mount ${DEVICE} ${WORK_DIR}/image > /dev/null
+#
+#echo "%(NETWORK_TYPE)s" > ${WORK_DIR}/image/firmadyne/network_type
+#echo "%(NET_BRIDGE)s" > ${WORK_DIR}/image/firmadyne/net_bridge
+#echo "%(NET_INTERFACE)s" > ${WORK_DIR}/image/firmadyne/net_interface
+#
+#echo "#!/firmadyne/sh" > ${WORK_DIR}/image/firmadyne/debug.sh
+#if (echo ${RUN_MODE} | grep -q "debug"); then
+#    echo "while (true); do /firmadyne/busybox nc -lp 31337 -e /firmadyne/sh; done &" >> ${WORK_DIR}/image/firmadyne/debug.sh
+#    echo "/firmadyne/busybox telnetd -p 31338 -l /firmadyne/sh" >> ${WORK_DIR}/image/firmadyne/debug.sh
+#fi
+#chmod a+x ${WORK_DIR}/image/firmadyne/debug.sh
+#
+#sleep 1
+#sync
+#umount ${WORK_DIR}/image > /dev/null
+#del_partition ${DEVICE:0:$((${#DEVICE}-2))}
 
 %(START_NET)s
 
@@ -387,11 +387,11 @@ def qemuCmd(iid, network, ports, network_type, arch, endianness, qemuInitValue, 
     network_iface = ""
     if arch == "mips":
         qemuEnvVars = ""
-        qemuDisk = "-drive if=ide,format=raw,file=${IMAGE}"
+        qemuDisk = "-drive if=ide,format=qcow2,file=${IMAGE}"
         if endianness != "eb" and endianness != "el":
             raise Exception("You didn't specify a valid endianness")
     elif arch == "arm":
-        qemuDisk = "-drive if=none,file=${IMAGE},format=raw,id=rootfs -device virtio-blk-device,drive=rootfs"
+        qemuDisk = "-drive if=none,file=${IMAGE},format=qcow2,id=rootfs -device virtio-blk-device,drive=rootfs"
         if endianness == "el":
             qemuEnvVars = "QEMU_AUDIO_DRV=none"
         elif endianness == "eb":
@@ -480,15 +480,16 @@ def inferNetwork(iid, arch, endianness, init):
     TIMEOUT = int(os.environ['TIMEOUT'])
     targetDir = SCRATCHDIR + '/' + str(iid)
 
-    loopFile = mountImage(targetDir)
+    #loopFile = mountImage(targetDir)
 
+    qemuInitValue = 'rdinit=/firmadyne/preInit.sh'
+    '''
     fileType = subprocess.check_output(["file", "-b", "%s/image/%s" % (targetDir, init)]).decode().strip()
     print("[*] Infer test: %s (%s)" % (init, fileType))
 
     with open(targetDir + '/image/firmadyne/network_type', 'w') as out:
         out.write("None")
 
-    qemuInitValue = 'rdinit=/firmadyne/preInit.sh'
     if os.path.exists(targetDir + '/service'):
         webService = open(targetDir + '/service').read().strip()
     else:
@@ -520,8 +521,8 @@ def inferNetwork(iid, arch, endianness, init):
         # trendnet TEW-828DRU_1.0.7.2, etc...
         out.write('/firmadyne/busybox sleep 36000\n')
         out.close()
-
-    umountImage(targetDir, loopFile)
+    '''
+    #umountImage(targetDir, loopFile)
 
     print("Running firmware %d: terminating after %d secs..." % (iid, TIMEOUT))
 
@@ -533,11 +534,11 @@ def inferNetwork(iid, arch, endianness, init):
     cmd += " 2>&1 > /dev/null"
     os.system(cmd)
 
-    loopFile = mountImage(targetDir)
-    if not os.path.exists(targetDir + '/image/firmadyne/nvram_files'):
-        print("Infer NVRAM default file!\n")
-        os.system("{}/inferDefault.py {}".format(SCRIPTDIR, iid))
-    umountImage(targetDir, loopFile)
+    #loopFile = mountImage(targetDir)
+    #if not os.path.exists(targetDir + '/image/firmadyne/nvram_files'):
+    #    print("Infer NVRAM default file!\n")
+    #    os.system("{}/inferDefault.py {}".format(SCRIPTDIR, iid))
+    #umountImage(targetDir, loopFile)
 
     data = open("%s/qemu.initial.serial.log" % targetDir, 'rb').read()
 
@@ -691,12 +692,12 @@ def process(iid, arch, endianness, makeQemuCmd=False, outfile=None):
 
         # restore infer network data
         # targetData is '' when init is preInit.sh
-        if targetData != '':
-            targetDir = SCRATCHDIR + '/' + str(iid)
-            loopFile = mountImage(targetDir)
-            with open(targetFile, 'w') as out:
-                out.write(targetData)
-            umountImage(targetDir, loopFile)
+        #if targetData != '':
+        #    targetDir = SCRATCHDIR + '/' + str(iid)
+        #    loopFile = mountImage(targetDir)
+        #    with open(targetFile, 'w') as out:
+        #        out.write(targetData)
+        #    umountImage(targetDir, loopFile)
 
     return success
 

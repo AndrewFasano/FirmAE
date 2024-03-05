@@ -28,6 +28,8 @@ else
     exit 1
 fi
 
+sudo service postgresql start
+
 function get_option()
 {
     OPTION=${1}
@@ -204,8 +206,8 @@ function run_emulation()
         # TIMEOUT is set in "firmae.config". This TIMEOUT is used for initial
         # log collection.
         TIMEOUT=$TIMEOUT FIRMAE_NET=${FIRMAE_NET} \
-          ./scripts/makeNetwork.py -i $IID -q -o -a ${ARCH} \
-          &> ${WORK_DIR}/makeNetwork.log
+          ./scripts/makeNetwork.py -i $IID -q -o -a ${ARCH} #\
+          #&> ${WORK_DIR}/makeNetwork.log
         ln -s ./run.sh ${WORK_DIR}/run_debug.sh | true
         ln -s ./run.sh ${WORK_DIR}/run_analyze.sh | true
         ln -s ./run.sh ${WORK_DIR}/run_boot.sh | true

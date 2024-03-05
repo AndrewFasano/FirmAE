@@ -8,12 +8,6 @@ if [ $# -lt 1 ]; then
 fi
 
 IN_PATH=$(readlink -f "$1")
-
-if [ ! -d "${IN_PATH}" ]; then
-  echo "${IN_PATH} is not a directory."
-  exit 1
-fi
-
 # Define the file where results will be stored
 RESULTS_FILE="docker_results.txt"
 
@@ -25,22 +19,26 @@ process_file() {
     local result_file="${in_dir}/${in_file}_result.txt"
 
 
-    docker run --rm -v /dev:/dev \
-        -v "${in_dir}:/work/firmwares" \
+    docker run --rm \
         --privileged \
+        -v "${in_dir}:/work/firmwares" \
         fcore \
             bash -c "\
                 cd /work/FirmAE && \
-                sudo service postgresql start && \
                 ./run.sh -c brand \"/work/firmwares/${in_file}\"; \
-                echo -n 'RESULT: '; \
-                cat ./scratch/*/result \
-                " | tee $result_file
-    grep 'RESULT: ' $result_file | cut -d' ' -f1 >> $RESULTS_FILE # This could get clobbered with races
+                " #| tee $result_file
+    #grep 'RESULT: ' $result_file | cut -d' ' -f1 >> $RESULTS_FILE # This could get clobbered with races
 }
 
 export -f process_file
 export RESULTS_FILE
 
-# Find all files in the directory and pass them to xargs for parallel processing
-find "${IN_PATH}" -type f -print0 | xargs -0 -I {} -P $(nproc) bash -c 'process_file "$@"' _ {}
+
+if [ -d "${IN_PATH}" ]; then
+  # Find all files in the directory and pass them to xargs for parallel processing
+  find "${IN_PATH}" -type f -print0 | xargs -0 -I {} -P $(nproc) bash -c 'process_file "$@"' _ {}
+else
+  # Process a single file
+  process_file "${IN_PATH}"
+fi
+
