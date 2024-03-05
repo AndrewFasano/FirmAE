@@ -65,7 +65,7 @@ RUN mkdir -p /work/firmwares && \
     cp /work/FirmAE/unstuff /usr/local/bin
 
 ENV USER=root
-ENV FIRMAE_DOCKER=true
+#ENV FIRMAE_DOCKER=true
 
 #CMD ["bash", "-c", \
 #       "sudo service postgresql start && sudo chmod 777 /out && /bin/bash"]
